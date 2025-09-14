@@ -101,11 +101,11 @@ function Home() {
 
   return (
     <div className=" my-10 bg-gray-100 max-w-lg lg:max-w-xl rounded-lg shadow-lg mx-8 sm:mx-auto p-6">
-      <h1 className="text-2xl font-semibold text-center">Todo App</h1>
+      <h1 className="text-2xl font-semibold text-center">Task App</h1>
       <div className="flex mb-4">
         <input
           type="text"
-          placeholder="Add a new todo"
+          placeholder="Add a new task"
           value={newTodo}
           onChange={(e) => setNewTodo(e.target.value)}
           onKeyPress={(e) => e.key === "Enter" && todoCreate()}
@@ -160,7 +160,7 @@ function Home() {
       )}
 
       <p className="mt-4 text-center text-sm text-gray-700">
-        {remainingTodos} remaining todos
+        {remainingTodos} remaining task
       </p>
       <button
         onClick={() => logout()}
