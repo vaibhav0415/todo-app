@@ -1,89 +1,111 @@
-import React, { useEffect,useState } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { use } from "react";
-
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+
 function Home() {
-  const [todos, setTodos] = useState([]);
+  const [tasks, setTasks] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [newTodo, setNewTodo] = useState("");
+  const [newTask, setNewTask] = useState({
+    title: "",
+    description: "",
+    priority: "Medium",
+    dueDate: "",
+    category: "General",
+  });
 
   useEffect(() => {
-    const fetchtodos = async () => {
+    const fetchTasks = async () => {
       try {
         setLoading(true);
-        const response = await axios.get("http://localhost:4001/todo/fetch", {
+        const response = await axios.get("http://localhost:4001/task/fetch", {
           withCredentials: true,
           headers: {
             "Content-Type": "application/json",
           },
         });
-
-        console.log(response);
-        setTodos(response.data.todos);
+        setTasks(response.data.tasks);
         setError(null);
       } catch (error) {
-        setError("Failed to fetch todos");
+        setError("Failed to fetch tasks");
+        toast.error("Failed to fetch tasks");
       } finally {
         setLoading(false);
       }
     };
-    fetchtodos();
+    fetchTasks();
   }, []);
 
-  const todoCreate = async () => {
-    if (!newTodo) return;
+  const taskCreate = async () => {
+    if (!newTask.title) {
+      toast.error("Task title is required");
+      return;
+    }
     try {
       const response = await axios.post(
-        "http://localhost:4001/todo/create",
+        "http://localhost:4001/task/create",
         {
-          text: newTodo,
+          title: newTask.title,
+          description: newTask.description,
           completed: false,
+          priority: newTask.priority,
+          dueDate: newTask.dueDate || null,
+          category: newTask.category,
         },
         {
           withCredentials: true,
         }
       );
-      console.log(response.data.newTodo);
-      setTodos([...todos, response.data.newTodo]);
-      setNewTodo("");
+      setTasks([...tasks, response.data.task]);
+      setNewTask({
+        title: "",
+        description: "",
+        priority: "Medium",
+        dueDate: "",
+        category: "General",
+      });
+      toast.success("Task created successfully");
     } catch (error) {
-      setError("Failed to create todo");
+      setError("Failed to create task");
+      toast.error("Failed to create task");
     }
   };
 
-  const todoStatus = async (id) => {
-    const todo = todos.find((t) => t._id === id);
+  const taskStatus = async (id) => {
+    const task = tasks.find((t) => t._id === id);
     try {
       const response = await axios.put(
-        `http://localhost:4001/todo/update/${id}`,
+        `http://localhost:4001/task/update/${id}`,
         {
-          ...todo,
-          completed: !todo.completed,
+          ...task,
+          completed: !task.completed,
         },
         {
           withCredentials: true,
         }
       );
-      console.log(response.data.todo);
-      setTodos(todos.map((t) => (t._id === id ? response.data.todo : t)));
+      setTasks(tasks.map((t) => (t._id === id ? response.data.task : t)));
+      toast.success("Task status updated");
     } catch (error) {
-      setError("Failed to find todo status");
+      setError("Failed to update task status");
+      toast.error("Failed to update task status");
     }
   };
 
-  const todoDelete = async (id) => {
+  const taskDelete = async (id) => {
     try {
-      await axios.delete(`http://localhost:4001/todo/delete/${id}`, {
+      await axios.delete(`http://localhost:4001/task/delete/${id}`, {
         withCredentials: true,
       });
-      setTodos(todos.filter((t) => t._id !== id));
+      setTasks(tasks.filter((t) => t._id !== id));
+      toast.success("Task deleted successfully");
     } catch (error) {
-      setError("Failed to Delete Todo");
+      setError("Failed to delete task");
+      toast.error("Failed to delete task");
     }
   };
+
   const navigateTo = useNavigate();
   const logout = async () => {
     try {
@@ -97,73 +119,128 @@ function Home() {
       toast.error("Error logging out");
     }
   };
-  const remainingTodos = todos.filter((todo) => !todo.completed).length;
+
+  const remainingTasks = tasks.filter((task) => !task.completed).length;
 
   return (
-    <div className=" my-10 bg-gray-100 max-w-lg lg:max-w-xl rounded-lg shadow-lg mx-8 sm:mx-auto p-6">
-      <h1 className="text-2xl font-semibold text-center">Task App</h1>
-      <div className="flex mb-4">
-        <input
-          type="text"
-          placeholder="Add a new task"
-          value={newTodo}
-          onChange={(e) => setNewTodo(e.target.value)}
-          onKeyPress={(e) => e.key === "Enter" && todoCreate()}
-          className="flex-grow p-2 border rounded-l-md focus:outline-none"
-        />
-        <button
-          onClick={todoCreate}
-          className="bg-blue-600 border rounded-r-md text-white px-4 py-2 hover:bg-blue-900 duration-300"
-        >
-          Add
-        </button>
+    <div className="my-10 bg-gray-100 max-w-lg lg:max-w-2xl rounded-lg shadow-lg mx-8 sm:mx-auto p-6">
+      <h1 className="text-2xl font-semibold text-center">Task Management App</h1>
+      <div className="mb-4">
+        <div className="flex flex-col space-y-4">
+          <input
+            type="text"
+            placeholder="Task Title"
+            value={newTask.title}
+            onChange={(e) =>
+              setNewTask({ ...newTask, title: e.target.value })
+            }
+            onKeyPress={(e) => e.key === "Enter" && taskCreate()}
+            className="p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <textarea
+            placeholder="Description (optional)"
+            value={newTask.description}
+            onChange={(e) =>
+              setNewTask({ ...newTask, description: e.target.value })
+            }
+            className="p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <select
+            value={newTask.priority}
+            onChange={(e) =>
+              setNewTask({ ...newTask, priority: e.target.value })
+            }
+            className="p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="Low">Low</option>
+            <option value="Medium">Medium</option>
+            <option value="High">High</option>
+          </select>
+          <input
+            type="date"
+            value={newTask.dueDate}
+            onChange={(e) =>
+              setNewTask({ ...newTask, dueDate: e.target.value })
+            }
+            className="p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <input
+            type="text"
+            placeholder="Category (e.g., Work, Personal)"
+            value={newTask.category}
+            onChange={(e) =>
+              setNewTask({ ...newTask, category: e.target.value })
+            }
+            className="p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            onClick={taskCreate}
+            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-900 duration-300"
+          >
+            Add Task
+          </button>
+        </div>
       </div>
       {loading ? (
         <div className="text-center justify-center">
-          <span className="textgray-500">Loading...</span>
+          <span className="text-gray-500">Loading...</span>
         </div>
       ) : error ? (
         <div className="text-center text-red-600 font-semibold">{error}</div>
       ) : (
-        <ul className="space-y-2">
-          {todos.map((todo, index) => (
+        <ul className="space-y-4">
+          {tasks.map((task) => (
             <li
-              key={todo._id || index}
-              className="flex items-center justify-between p-3 bg-gray-100 rounded-md"
+              key={task._id}
+              className="flex flex-col p-4 bg-gray-200 rounded-md shadow-sm"
             >
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={todo.completed}
-                  onChange={() => todoStatus(todo._id)}
-                  className="mr-2"
-                />
-                <span
-                  className={`${
-                    todo.completed
-                      ? "line-through text-gray-800 font-semibold"
-                      : ""
-                  } `}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={task.completed}
+                    onChange={() => taskStatus(task._id)}
+                    className="mr-2"
+                  />
+                  <div>
+                    <span
+                      className={`${
+                        task.completed
+                          ? "line-through text-gray-800 font-semibold"
+                          : "font-semibold"
+                      }`}
+                    >
+                      {task.title}
+                    </span>
+                    {task.description && (
+                      <p className="text-sm text-gray-600">
+                        {task.description}
+                      </p>
+                    )}
+                    <p className="text-sm text-gray-600">
+                      Priority: {task.priority} | Category: {task.category}
+                      {task.dueDate && (
+                        <> | Due: {new Date(task.dueDate).toLocaleDateString()}</>
+                      )}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => taskDelete(task._id)}
+                  className="text-red-500 hover:text-red-800 duration-300"
                 >
-                  {todo.text}
-                </span>
+                  Delete
+                </button>
               </div>
-              <button
-                onClick={() => todoDelete(todo._id)}
-                className="text-red-500 hover:text-red-800 duration-300"
-              >
-                Delete
-              </button>
             </li>
           ))}
         </ul>
       )}
-
       <p className="mt-4 text-center text-sm text-gray-700">
-        {remainingTodos} remaining task
+        {remainingTasks} remaining task{remainingTasks !== 1 ? "s" : ""}
       </p>
       <button
-        onClick={() => logout()}
+        onClick={logout}
         className="mt-6 px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-800 duration-500 mx-auto block"
       >
         Logout
@@ -171,6 +248,5 @@ function Home() {
     </div>
   );
 }
-
 
 export default Home;
