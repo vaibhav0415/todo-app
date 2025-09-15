@@ -1,5 +1,5 @@
-import axios from "axios";
 import React, { useState } from "react";
+import api from "../utils/api"; // Import the Axios instance
 import toast from "react-hot-toast";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -17,14 +17,7 @@ function Signup() {
       return;
     }
     try {
-      const { data } = await axios.post(
-        "http://localhost:4001/user/signup",
-        { username, email, password },
-        {
-          withCredentials: true,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
+      const { data } = await api.post("/user/signup", { username, email, password });
       toast.success(data.message || "Registered successfully");
       localStorage.setItem("jwt", data.token);
       navigateTo("/login");

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../utils/api"; // Import the Axios instance
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
@@ -19,12 +19,7 @@ function Home() {
     const fetchTasks = async () => {
       try {
         setLoading(true);
-        const response = await axios.get("http://localhost:4001/task/fetch", {
-          withCredentials: true,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
+        const response = await api.get("/task/fetch"); // Use api instance
         setTasks(response.data.tasks);
         setError(null);
       } catch (error) {
@@ -43,20 +38,14 @@ function Home() {
       return;
     }
     try {
-      const response = await axios.post(
-        "http://localhost:4001/task/create",
-        {
-          title: newTask.title,
-          description: newTask.description,
-          completed: false,
-          priority: newTask.priority,
-          dueDate: newTask.dueDate || null,
-          category: newTask.category,
-        },
-        {
-          withCredentials: true,
-        }
-      );
+      const response = await api.post("/task/create", {
+        title: newTask.title,
+        description: newTask.description,
+        completed: false,
+        priority: newTask.priority,
+        dueDate: newTask.dueDate || null,
+        category: newTask.category,
+      });
       setTasks([...tasks, response.data.task]);
       setNewTask({
         title: "",
@@ -75,16 +64,10 @@ function Home() {
   const taskStatus = async (id) => {
     const task = tasks.find((t) => t._id === id);
     try {
-      const response = await axios.put(
-        `http://localhost:4001/task/update/${id}`,
-        {
-          ...task,
-          completed: !task.completed,
-        },
-        {
-          withCredentials: true,
-        }
-      );
+      const response = await api.put(`/task/update/${id}`, {
+        ...task,
+        completed: !task.completed,
+      });
       setTasks(tasks.map((t) => (t._id === id ? response.data.task : t)));
       toast.success("Task status updated");
     } catch (error) {
@@ -95,9 +78,7 @@ function Home() {
 
   const taskDelete = async (id) => {
     try {
-      await axios.delete(`http://localhost:4001/task/delete/${id}`, {
-        withCredentials: true,
-      });
+      await api.delete(`/task/delete/${id}`);
       setTasks(tasks.filter((t) => t._id !== id));
       toast.success("Task deleted successfully");
     } catch (error) {
@@ -109,9 +90,7 @@ function Home() {
   const navigateTo = useNavigate();
   const logout = async () => {
     try {
-      await axios.get("http://localhost:4001/user/logout", {
-        withCredentials: true,
-      });
+      await api.get("/user/logout");
       toast.success("User logged out successfully");
       navigateTo("/login");
       localStorage.removeItem("jwt");
@@ -236,7 +215,7 @@ function Home() {
           ))}
         </ul>
       )}
-      <p className="mt-4 text-center text-sm text-gray-700">
+      <p className="mt-4 text-center text-sm text-gray-600">
         {remainingTasks} remaining task{remainingTasks !== 1 ? "s" : ""}
       </p>
       <button
