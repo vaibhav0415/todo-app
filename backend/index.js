@@ -20,7 +20,6 @@ app.use(cors({
 
 dotenv.config();
 
-const PORT = process.env.PORT || 4001;
 const DB_URI = process.env.MONGODB_URI;
 
 // Database connection
@@ -39,6 +38,4 @@ app.get("/", (req, res) => {
     res.send("Welcome to the Task Management API!");
 });
 
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});
+export default app;
